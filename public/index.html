@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CalmReply — Handles the conversations you've been avoiding</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f0f4f7;
+      --card: #ffffff;
+      --accent: #5a9ea6;
+      --accent-hover: #4a8a91;
+      --accent-active: #3d747a;
+      --text: #2c3e50;
+      --text-light: #6b7c8a;
+      --border: #dce4ea;
+      --success: #5a9ea6;
+      --error: #c0625a;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0 16px 48px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 40px 0 8px;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 1rem;
+      color: var(--text-light);
+      margin-top: 6px;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 540px;
+      margin: 24px auto 0;
+      padding: 28px 24px;
+    }
+
+    /* ── Form Elements ── */
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    select,
+    textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--text);
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%236b7c8a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 140px;
+    }
+
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .field + .field {
+      margin-top: 20px;
+    }
+
+    /* ── Tone Pills ── */
+    .tone-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .tone-pill {
+      position: relative;
+    }
+
+    .tone-pill input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .tone-pill span {
+      display: inline-block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .tone-pill input:checked + span {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tone-pill span:hover {
+      border-color: var(--accent);
+    }
+
+    /* ── Primary Button ── */
+    .btn-primary {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-primary:active {
+      background: var(--accent-active);
+      transform: scale(0.985);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Output Area ── */
+    .output-section {
+      display: none;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .output-section.visible {
+      display: block;
+    }
+
+    .output-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+
+    .output-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f7fafb;
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 10px 20px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-copy:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-copy.copied {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Error Message ── */
+    .error-msg {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      color: var(--error);
+      background: #fdf0ef;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .error-msg.visible {
+      display: block;
+    }
+
+    /* ── Email Capture ── */
+    .email-section {
+      max-width: 540px;
+      margin: 32px auto 0;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .email-section p {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      line-height: 1.55;
+      max-width: 420px;
+      margin: 0 auto 14px;
+    }
+
+    .email-form {
+      display: flex;
+      gap: 8px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .email-form input {
+      flex: 1;
+      min-width: 0;
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      background: var(--card);
+      transition: border-color 0.2s;
+    }
+
+    .email-form input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .email-form input::placeholder {
+      color: #a0adb8;
+    }
+
+    .email-form button {
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px 18px;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .email-form button:hover {
+      background: var(--accent-hover);
+    }
+
+    .email-confirm {
+      display: none;
+      font-size: 0.9rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .email-confirm.visible {
+      display: block;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 0 4px;
+    }
+
+    footer p {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) {
+      body {
+        padding: 0 12px 40px;
+      }
+
+      .card {
+        padding: 22px 18px;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .email-form {
+        flex-direction: column;
+      }
+
+      .email-form button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <h1>CalmReply</h1>
+    <p>Handles the conversations you've been avoiding.</p>
+  </header>
+
+  <!-- ── Main Card ── -->
+  <div class="card">
+
+    <!-- Situation Type -->
+    <div class="field">
+      <label for="situation">What kind of message is this?</label>
+      <select id="situation">
+        <option value="complaint">Complaint / De-escalation</option>
+        <option value="ghosted">Ghosted Follow-Up</option>
+        <option value="invoice">Invoice Chase</option>
+        <option value="scope">Scope Pushback / Saying No</option>
+        <option value="awkward">Awkward or Difficult Message</option>
+        <option value="general">General Communication Help</option>
+      </select>
+    </div>
+
+    <!-- User Message -->
+    <div class="field">
+      <label for="message">Paste what you received, or describe the situation</label>
+      <textarea id="message" rows="6" placeholder="Paste the message here, or describe what you need to say..."></textarea>
+    </div>
+
+    <!-- Tone Selector -->
+    <div class="field">
+      <label>Tone</label>
+      <div class="tone-options">
+        <label class="tone-pill">
+          <input type="radio" name="tone" value="softer" checked />
+          <span>Softer</span>
+        </label>
+        <label class="tone-pill">
+          <input type="radio" name="tone" value="firmer" />
+          <span>Firmer</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-primary" id="submitBtn" type="button">Help me respond</button>
+
+    <!-- Error -->
+    <div class="error-msg" id="errorMsg">Something went wrong. Try again in a moment.</div>
+
+    <!-- Output -->
+    <div class="output-section" id="outputSection">
+      <div class="output-label">Your suggested response</div>
+      <div class="output-text" id="outputText"></div>
+      <button class="btn-copy" id="copyBtn" type="button">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.5a1.5 1.5 0 0 0-1.5-1.5H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2"/></svg>
+        <span id="copyLabel">Copy to clipboard</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Email Capture ── -->
+  <div class="email-section">
+    <p>I'm building this because I'm AuDHD and needed it. Want to follow along?</p>
+    <form class="email-form" id="emailForm">
+      <input type="email" id="emailInput" placeholder="you@email.com" required />
+      <button type="submit">Keep me posted</button>
+    </form>
+    <div class="email-confirm" id="emailConfirm">Thanks — I'll keep you in the loop.</div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <p>Built by a paramedic with AuDHD who got tired of freezing.</p>
+  </footer>
+
+  <!-- ── JS ── -->
+  <script>
+    (function () {
+      // ── Config ──
+      // REPLACE THIS URL with your n8n webhook endpoint
+      var WEBHOOK_URL = 'https://aswales.app.n8n.cloud/webhook/calmreply';
+
+      // ── Elements ──
+      var situationEl = document.getElementById('situation');
+      var messageEl = document.getElementById('message');
+      var submitBtn = document.getElementById('submitBtn');
+      var outputSection = document.getElementById('outputSection');
+      var outputText = document.getElementById('outputText');
+      var copyBtn = document.getElementById('copyBtn');
+      var copyLabel = document.getElementById('copyLabel');
+      var errorMsg = document.getElementById('errorMsg');
+      var emailForm = document.getElementById('emailForm');
+      var emailInput = document.getElementById('emailInput');
+      var emailConfirm = document.getElementById('emailConfirm');
+
+      function getSelectedTone() {
+        var checked = document.querySelector('input[name="tone"]:checked');
+        return checked ? checked.value : 'softer';
+      }
+
+      // ── Submit Handler ──
+      submitBtn.addEventListener('click', function () {
+        var message = messageEl.value.trim();
+        if (!message) {
+          messageEl.focus();
+          return;
+        }
+
+        // Reset state
+        errorMsg.classList.remove('visible');
+        outputSection.classList.remove('visible');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Finding the right words\u2026';
+
+        var payload = {
+          situationType: situationEl.value,
+          userMessage: message,
+          tone: getSelectedTone()
+        };
+
+        var controller = new AbortController();
+        var timeout = setTimeout(function () { controller.abort(); }, 15000);
+
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        })
+          .then(function (res) {
+            clearTimeout(timeout);
+            if (!res.ok) throw new Error('Server error');
+            return res.json();
+          })
+          .then(function (data) {
+            // Handle both array and object responses from n8n
+            var result = Array.isArray(data) ? data[0] : data;
+            if (!result || !result.response) throw new Error('Empty response');
+            outputText.textContent = result.response;
+            outputSection.classList.add('visible');
+            outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          })
+          .catch(function () {
+            errorMsg.classList.add('visible');
+          })
+          .finally(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Help me respond';
+          });
+      });
+
+      // ── Copy Handler ──
+      copyBtn.addEventListener('click', function () {
+        var text = outputText.textContent;
+        if (!text) return;
+
+        navigator.clipboard.writeText(text).then(function () {
+          copyBtn.classList.add('copied');
+          copyLabel.textContent = 'Copied \u2713';
+          setTimeout(function () {
+            copyBtn.classList.remove('copied');
+            copyLabel.textContent = 'Copy to clipboard';
+          }, 2000);
+        });
+      });
+
+      // ── Email Capture ──
+      emailForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = emailInput.value.trim();
+        if (!email) return;
+
+        // TODO: Replace with your actual email capture endpoint
+        // (Mailchimp embed, Buttondown, Google Form, etc.)
+        // For now, just show confirmation and log to console
+        console.log('Email captured:', email);
+
+        emailForm.style.display = 'none';
+        emailConfirm.classList.add('visible');
+      });
+    })();
+  </script>
+</body>
+</html>

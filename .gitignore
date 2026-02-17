@@ -1,0 +1,6 @@
+# Only deploy /public to Vercel
+# Keep docs, n8n exports, and other reference files in git for backup
+
+# OS files
+.DS_Store
+Thumbs.db
