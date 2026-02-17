@@ -553,18 +553,26 @@
       });
 
       // ── Email Capture ──
+      var EMAIL_WEBHOOK_URL = 'https://aswales.app.n8n.cloud/webhook/calmreply-email';
+
       emailForm.addEventListener('submit', function (e) {
         e.preventDefault();
         var email = emailInput.value.trim();
         if (!email) return;
 
-        // TODO: Replace with your actual email capture endpoint
-        // (Mailchimp embed, Buttondown, Google Form, etc.)
-        // For now, just show confirmation and log to console
-        console.log('Email captured:', email);
-
-        emailForm.style.display = 'none';
-        emailConfirm.classList.add('visible');
+        fetch(EMAIL_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        })
+          .then(function () {
+            emailForm.style.display = 'none';
+            emailConfirm.classList.add('visible');
+          })
+          .catch(function () {
+            emailForm.style.display = 'none';
+            emailConfirm.classList.add('visible');
+          });
       });
     })();
   </script>
