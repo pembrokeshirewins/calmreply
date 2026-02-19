@@ -1083,6 +1083,15 @@
       }
       html += '</ul></div>';
 
+      // Kill signals
+      html += '<div class="cheat-sheet-section">';
+      html += '<h4>Kill Signals</h4>';
+      html += '<ul>';
+      for (var ks = 0; ks < sub.killSignals.length; ks++) {
+        html += '<li class="dont-item">' + sub.killSignals[ks].message + '</li>';
+      }
+      html += '</ul></div>';
+
       // DO / DON'T grid
       html += '<div class="cheat-sheet-section">';
       html += '<h4>Do / Don\'t</h4>';
@@ -1213,6 +1222,16 @@
         }
 
         saveState(state);
+
+        // Re-enable save button if it was left in "Saved!" state
+        var saveBtn = document.getElementById('btnSave');
+        if (saveBtn && saveBtn.disabled) {
+          saveBtn.textContent = 'Save to Notion';
+          saveBtn.style.background = '#fff';
+          saveBtn.style.color = 'var(--accent)';
+          saveBtn.style.borderColor = 'var(--accent)';
+          saveBtn.disabled = false;
+        }
       }, 1000);
     }
 
@@ -1589,16 +1608,16 @@
       var d = new Date(isoString);
       var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      var day = days[d.getDay()];
-      var date = d.getDate();
-      var month = months[d.getMonth()];
-      var hours = d.getHours();
-      var minutes = d.getMinutes();
+      var day = days[d.getUTCDay()];
+      var date = d.getUTCDate();
+      var month = months[d.getUTCMonth()];
+      var hours = d.getUTCHours();
+      var minutes = d.getUTCMinutes();
       var ampm = hours >= 12 ? 'pm' : 'am';
       hours = hours % 12;
       if (hours === 0) hours = 12;
       var minuteStr = minutes < 10 ? '0' + minutes : '' + minutes;
-      return day + ' ' + date + ' ' + month + ' at ' + hours + ':' + minuteStr + ampm;
+      return day + ' ' + date + ' ' + month + ' at ' + hours + ':' + minuteStr + ampm + ' GMT';
     }
 
     function getStatusClass(status) {
