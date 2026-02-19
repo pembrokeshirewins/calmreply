@@ -1243,7 +1243,7 @@
       var body = (document.getElementById('postBody').value || '').trim();
       var results = [];
 
-      // ── 1. Title Quality (weight: 25%) ──
+      // ── 1. Title Quality (weight: 20%) ──
       var titleScore = 10;
       var titleChecks = [];
       if (!title) {
@@ -1281,9 +1281,9 @@
         }
       }
       if (titleScore < 0) titleScore = 0;
-      results.push({ name: 'Title Quality', weight: 25, score: titleScore, checks: titleChecks });
+      results.push({ name: 'Title Quality', weight: 20, score: titleScore, checks: titleChecks });
 
-      // ── 2. Kill Signals (weight: 25%) ──
+      // ── 2. Kill Signals (weight: 20%) ──
       var killScore = 10;
       var killChecks = [];
       var killSignals = currentSub.killSignals || [];
@@ -1302,9 +1302,9 @@
       if (killChecks.length === 0) {
         killChecks.push({ pass: true, message: 'No kill signals detected' });
       }
-      results.push({ name: 'Kill Signals', weight: 25, score: killScore, checks: killChecks });
+      results.push({ name: 'Kill Signals', weight: 20, score: killScore, checks: killChecks });
 
-      // ── 3. Word Count (weight: 15%) ──
+      // ── 3. Word Count (weight: 10%) ──
       var wordCount = countWords(body);
       var wcMin = currentSub.wordCountMin;
       var wcMax = currentSub.wordCountMax;
@@ -1323,7 +1323,7 @@
         wcScore = 10;
         wcChecks.push({ pass: true, message: wordCount + ' words — within target range (' + wcMin + '\u2013' + wcMax + ')' });
       }
-      results.push({ name: 'Word Count', weight: 15, score: wcScore, checks: wcChecks });
+      results.push({ name: 'Word Count', weight: 10, score: wcScore, checks: wcChecks });
 
       // ── 4. Structure (weight: 20%) ──
       var structScore = 10;
@@ -1375,7 +1375,8 @@
       }
       results.push({ name: 'Structure', weight: 20, score: structScore, checks: structChecks });
 
-      // ── 5. Link Discipline (weight: 15%) ──
+
+      // ── 5. Link Discipline (weight: 10%) ──
       var linkScore = 10;
       var linkChecks = [];
 
@@ -1395,7 +1396,130 @@
       if (linkChecks.length === 0) {
         linkChecks.push({ pass: true, message: 'No links or product names in body' });
       }
-      results.push({ name: 'Link Discipline', weight: 15, score: linkScore, checks: linkChecks });
+      results.push({ name: 'Link Discipline', weight: 10, score: linkScore, checks: linkChecks });
+
+      // ── 6. Voice & Authenticity (weight: 20%) ──
+      var voiceScore = 5; // Start neutral — earn points for human, lose for AI
+      var voiceChecks = [];
+
+      if (body) {
+        // --- AI TELL PATTERNS (penalise) ---
+
+        // Em dash overuse (AI signature)
+        var emDashCount = (body.match(/\u2014/g) || []).length;
+        if (emDashCount >= 3) {
+          voiceScore -= 2;
+          voiceChecks.push({ pass: false, message: 'Heavy em dash usage (' + emDashCount + ' found) \u2014 classic AI writing pattern. Use commas, full stops, or "..." instead' });
+        } else if (emDashCount >= 1) {
+          voiceScore -= 1;
+          voiceChecks.push({ pass: false, message: 'Em dashes detected (' + emDashCount + ') \u2014 feels AI-generated. Real people use "..." or just commas' });
+        }
+
+        // AI filler phrases
+        var aiPhrases = [
+          { re: /\b(here'?s the thing|let me be clear|it'?s worth noting|the reality is|I'?ll be honest)\b/gi, label: 'AI opener phrases' },
+          { re: /\b(at the end of the day|when all is said and done|in today'?s world)\b/gi, label: 'AI cliche phrases' },
+          { re: /\b(navigate|resonate[sd]?|leverage[sd]?|dive into|deep dive|unpack)\b/gi, label: 'AI buzzwords (navigate, resonate, leverage, etc.)' },
+          { re: /\b(incredibly|remarkably|genuinely|truly|absolutely|fundamentally)\b/gi, label: 'AI intensifiers used as filler' },
+          { re: /\band that'?s okay\.?\b/gi, label: '"And that\'s okay" \u2014 AI therapy speak' },
+          { re: /\b(it'?s important to|it'?s crucial to|it'?s essential to)\b/gi, label: 'AI prescriptive openers' },
+          { re: /\b(I want to be transparent|I want to be vulnerable)\b/gi, label: 'Announcing vulnerability instead of being vulnerable' }
+        ];
+        var aiPhraseCount = 0;
+        for (var ai = 0; ai < aiPhrases.length; ai++) {
+          var matches = body.match(aiPhrases[ai].re);
+          if (matches) {
+            aiPhraseCount += matches.length;
+            voiceChecks.push({ pass: false, message: aiPhrases[ai].label + ': "' + matches[0] + '"' });
+          }
+        }
+        if (aiPhraseCount >= 3) {
+          voiceScore -= 3;
+        } else if (aiPhraseCount >= 1) {
+          voiceScore -= 1;
+        }
+
+        // Short punchy paragraph pattern (AI staccato)
+        var paragraphs = body.split(/\n\s*\n/);
+        var shortParaCount = 0;
+        for (var sp = 0; sp < paragraphs.length; sp++) {
+          if (paragraphs[sp].trim() && countWords(paragraphs[sp]) <= 12) shortParaCount++;
+        }
+        if (paragraphs.length >= 4 && shortParaCount / paragraphs.length > 0.6) {
+          voiceScore -= 1;
+          voiceChecks.push({ pass: false, message: 'Too many short punchy paragraphs (' + shortParaCount + '/' + paragraphs.length + ') \u2014 reads like AI staccato. Real posts ramble more' });
+        }
+
+        // Overly clean structure (no sentence fragments, no trailing thoughts)
+        var sentences = body.split(/[.!?]+/).filter(function(s) { return s.trim().length > 0; });
+        var avgSentenceLen = 0;
+        if (sentences.length > 0) {
+          var totalWords = 0;
+          for (var sl = 0; sl < sentences.length; sl++) totalWords += countWords(sentences[sl]);
+          avgSentenceLen = totalWords / sentences.length;
+        }
+        if (avgSentenceLen > 18 && sentences.length > 5) {
+          voiceScore -= 1;
+          voiceChecks.push({ pass: false, message: 'Average sentence length is ' + Math.round(avgSentenceLen) + ' words \u2014 feels overly composed. Mix in some short fragments' });
+        }
+
+        // --- HUMAN MARKERS (reward) ---
+
+        // Humour / personality indicators
+        var humourMarkers = /\b(lol|lmao|haha|tbh|ngl)\b|\u{1F62C}|\u{1F605}|\u{1F62D}|\u{1F926}|:\)|;\)|:D|:P/gu;
+        if (humourMarkers.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Humour/personality markers found \u2014 feels human' });
+        }
+
+        // Self-deprecation (strong human signal)
+        var selfDeprecation = /\b(embarrassing|cringe|terrible at|awful at|can'?t even|my brain just|I'?m the worst|I'?m so bad at|the irony|plot twist)\b/i;
+        if (selfDeprecation.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Self-deprecation detected \u2014 strong authenticity signal' });
+        }
+
+        // Specific lived details (places, times, people, numbers)
+        var specificDetails = /\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|[0-9]+ (hours|days|weeks|minutes|years))\b/i;
+        if (specificDetails.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Specific lived details found \u2014 anchors the story as real' });
+        }
+
+        // Physical sensation descriptions (high-performing in ND subs)
+        var physicalSensations = /\b(chest tight|stomach drop|heart rac|palms|throat|physically|thump|punch in the gut|felt sick|couldn'?t breathe|froze|freezing)\b/i;
+        if (physicalSensations.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Physical sensation described \u2014 the top-performing posts in ND subs all do this' });
+        }
+
+        // Informal language / British English (authentic voice)
+        var informalVoice = /\b(cos|gonna|kinda|wanna|innit|rubbish|bloody|arse|mate|sorted|reckon|proper|knackered|dodgy)\b|\.\.\./i;
+        if (informalVoice.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Informal/colloquial language \u2014 sounds like a real person, not a template' });
+        }
+
+        // Conversational markers
+        var conversational = /\b(anyway|like,|honestly|I mean|you know what|if that makes sense|sorry for the ramble|idk)\b/i;
+        if (conversational.test(body)) {
+          voiceScore += 1;
+          voiceChecks.push({ pass: true, message: 'Conversational tone markers \u2014 reads like someone actually talking' });
+        }
+
+        // No human markers at all
+        if (voiceChecks.length === 0) {
+          voiceScore -= 1;
+          voiceChecks.push({ pass: false, message: 'No personality markers detected \u2014 add humour, specific details, or informal language to sound like yourself' });
+        }
+      } else {
+        voiceScore = 0;
+        voiceChecks.push({ pass: false, message: 'No body to check yet' });
+      }
+
+      if (voiceScore > 10) voiceScore = 10;
+      if (voiceScore < 0) voiceScore = 0;
+      results.push({ name: 'Voice & Authenticity', weight: 20, score: voiceScore, checks: voiceChecks });
 
       // ── Weighted total ──
       var weightedSum = 0;
