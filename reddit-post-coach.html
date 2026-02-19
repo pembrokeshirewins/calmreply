@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Post Coach — CalmReply</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f0f4f7;
+      --card: #ffffff;
+      --accent: #5a9ea6;
+      --accent-hover: #4a8a91;
+      --text: #2c3e50;
+      --text-light: #6b7c8a;
+      --border: #dce4ea;
+      --success: #27ae60;
+      --warning: #e67e22;
+      --error: #c0625a;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0 16px 48px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 40px 0 8px;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 1rem;
+      color: var(--text-light);
+      margin-top: 6px;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      display: none;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* ── Schedule Cards ── */
+    .schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .sub-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .sub-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .sub-card.next-up {
+      border-color: var(--accent);
+    }
+
+    .sub-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sub-card-name {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .sub-card-members {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-weight: 400;
+      margin-left: 6px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .status-upcoming {
+      background: var(--border);
+      color: var(--text-light);
+    }
+
+    .status-draft-started {
+      background: #fef3e2;
+      color: var(--warning);
+    }
+
+    .status-ready {
+      background: #e8f5e9;
+      color: var(--success);
+    }
+
+    .status-posted {
+      background: #e3f0f1;
+      color: var(--accent);
+    }
+
+    .sub-card-meta {
+      margin-top: 10px;
+      font-size: 0.875rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    .sub-card-meta .date {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .sub-card-meta .angle {
+      margin-top: 4px;
+    }
+
+    .sub-card-meta .flair {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--text-light);
+    }
+
+    .next-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sub-card-word-range {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    .sub-card-link-strategy {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    /* ── Writer placeholder ── */
+    #writer .placeholder-msg {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 24px;
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-light);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body {
+        padding: 0 12px 40px;
+      }
+
+      header {
+        padding: 28px 0 4px;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .sub-card {
+        padding: 16px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Reddit Post Coach</h1>
+    <p>CalmReply launch campaign — write, score, and schedule Reddit posts.</p>
+  </header>
+
+  <!-- ── Schedule Screen ── -->
+  <div id="schedule" class="screen active">
+    <div class="schedule-list" id="schedule-list"></div>
+  </div>
+
+  <!-- ── Writer Screen ── -->
+  <div id="writer" class="screen">
+    <div class="placeholder-msg">Writer will be built in the next task.</div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════
+    // Subreddit Intelligence Data
+    // ════════════════════════════════════════════════════════════
+    const SUBS = [
+      {
+        id: 'ADHD',
+        name: 'r/ADHD',
+        members: '2.2M',
+        scheduledDate: '2026-02-24T11:30:00Z',
+        angle: 'Question (avoidance stories)',
+        flair: 'Seeking Empathy',
+        wordCountMin: 200, wordCountMax: 400,
+        linkStrategy: 'first-comment',
+        keyPoints: [
+          'Open with a relatable ADHD avoidance question — invite stories, not advice',
+          'Paramedic context — the novelty/purpose match, the everything-else freeze',
+          'Specific funny examples of procrastination from your life',
+          'The ghosting dread — physical anxiety description (thump in the chest)',
+          'Punchline: your most unhinged avoidance was building a tool to avoid the avoidance'
+        ],
+        provenHooks: [
+          '"What\'s the most unhinged way you\'ve avoided a task"',
+          '"I [embarrassing ADHD thing] and here\'s what happened"',
+          '"Does anyone else [specific struggle]?"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected — immediate suspicion in ND subs' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body — links go in first comment only' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body — let them ask' }
+        ],
+        doList: [
+          'Follow r/adhdwomen patterns but gender-neutral framing',
+          'Personal story, first person, vulnerability > polish',
+          'Show the struggle before any hint of a win',
+          'End with a question that invites sharing'
+        ],
+        dontList: [
+          'Don\'t mention building a tool in the title',
+          'Don\'t use marketing language',
+          'Don\'t post generic advice without lived experience',
+          'Expect high removal risk — strict moderation (2.2M members)'
+        ],
+        commentTone: 'Casual, personal, empathetic. Match the energy of the community.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: false, requiresAuDHD: false }
+      },
+      {
+        id: 'AutisticAdults',
+        name: 'r/AutisticAdults',
+        members: '~102K',
+        scheduledDate: '2026-02-27T20:00:00Z',
+        angle: 'Question (the freeze)',
+        flair: '',
+        wordCountMin: 50, wordCountMax: 200,
+        linkStrategy: 'only-if-asked',
+        keyPoints: [
+          'The freeze moment — specific adult communication version: work emails, invoices, complaints',
+          'Paramedic contrast — one sentence only: can handle emergencies, can\'t handle a passive-aggressive email',
+          'The blank page insight — the freeze breaks when you have something to react to',
+          'End with a question: "Does anyone else get this?"'
+        ],
+        provenHooks: [
+          '"Does anyone else open a message, go completely blank, and then avoid it for a week?"',
+          '"The freeze isn\'t about not knowing what to say"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' },
+          { pattern: '\\b(I built|I made|I created|free tool|my tool)\\b', flags: 'i', message: 'Tool/building language detected' }
+        ],
+        doList: [
+          'Keep SHORT — 50-200 words, punchy',
+          'Frame around adult communication challenges',
+          'Describe the experience, not the tool',
+          'End with a question'
+        ],
+        dontList: [
+          'Don\'t mention building anything in the title',
+          'Don\'t go over 200 words',
+          'Don\'t describe how the tool works'
+        ],
+        commentTone: 'Practical, matter-of-fact, supportive.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: false, requiresAuDHD: false }
+      },
+      {
+        id: 'autism',
+        name: 'r/autism',
+        members: '~492K',
+        scheduledDate: '2026-03-02T14:30:00Z',
+        angle: 'Question (blank page vs words)',
+        flair: 'Discussion',
+        wordCountMin: 200, wordCountMax: 350,
+        linkStrategy: 'only-if-asked',
+        keyPoints: [
+          'Open with a question about the autistic processing experience — cognitive load of processing tone, intent, and response simultaneously',
+          'Paramedic context — clinical emergencies are protocol-driven. Written communication has no protocol',
+          'The blank page vs editing distinction — "I can edit a draft in minutes but can\'t start from nothing"',
+          'Mention masking exhaustion — the freeze is worse after a full day of masking',
+          'What do others do? — genuine question',
+          'Don\'t describe the tool in the post'
+        ],
+        provenHooks: [
+          '"Does anyone else find the blank page harder than the actual conversation?"',
+          '"Reply paralysis: is it the words or the starting that\'s the problem?"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' },
+          { pattern: '\\bneurodivergent\\b', flags: 'i', message: 'Say "autistic" not "neurodivergent" — r/autism cares about specificity' },
+          { pattern: '\\b(I built|I made|I created|free tool|my tool)\\b', flags: 'i', message: 'Tool/building language detected' }
+        ],
+        doList: [
+          'Say "autistic" not "neurodivergent"',
+          'Frame around the specific autistic processing experience',
+          'Reference masking exhaustion',
+          'Use appropriate flair',
+          'Acknowledge the range of support needs'
+        ],
+        dontList: [
+          'Don\'t be preachy or prescriptive',
+          'Don\'t oversimplify the experience',
+          'Don\'t ignore that some have the opposite problem (impulsive replies)',
+          'Don\'t treat autism as a quirky personality trait'
+        ],
+        commentTone: 'Mix of intellectual engagement and personal sharing.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: true, requiresAuDHD: false }
+      },
+      {
+        id: 'AutisticWithADHD',
+        name: 'r/AutisticWithADHD',
+        members: '~81K',
+        scheduledDate: '2026-03-05T16:00:00Z',
+        angle: 'The AuDHD communication conflict',
+        flair: 'General Discussion',
+        wordCountMin: 400, wordCountMax: 600,
+        linkStrategy: 'first-comment',
+        keyPoints: [
+          'Name the AuDHD communication trap — ADHD wants to fire off an impulsive reply, autism needs to process for days',
+          'Paramedic examples — real specific situations from your life',
+          'What you tried that DIDN\'T work — templates? Scripts? Asking friends?',
+          'The blank page realisation — frame as a discovery',
+          'What you ended up building — describe functionally, don\'t name it, don\'t link it',
+          'RSD disclaimer — "be brutal, the RSD will hit later" energy',
+          'Open question — "Does the freeze work this way for you?"'
+        ],
+        provenHooks: [
+          '"The AuDHD communication trap — my ADHD wants to reply NOW, my autism needs 3 days, and neither works"',
+          '"AuDHD and the impossible message"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' }
+        ],
+        doList: [
+          'This is YOUR community — be fully authentic',
+          'Go long (400-600 words)',
+          'Address the specific AuDHD push-pull',
+          'Include what didn\'t work before what did',
+          'Be funny where it comes naturally'
+        ],
+        dontList: [
+          'Don\'t rush — longest, most personal post',
+          'Don\'t only address autism OR ADHD — the intersection is the point',
+          'Don\'t make it about the tool'
+        ],
+        commentTone: 'Warm, detailed, personal. "Fellow AuDHD humans" energy.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: true, requiresAuDHD: true }
+      },
+      {
+        id: 'aspergers',
+        name: 'r/aspergers',
+        members: '~175K',
+        scheduledDate: '2026-03-12T17:30:00Z',
+        angle: 'Observation (processing pattern)',
+        flair: '',
+        wordCountMin: 200, wordCountMax: 350,
+        linkStrategy: 'only-if-asked',
+        keyPoints: [
+          'Open with an observation, not a feeling — "I\'ve noticed a pattern..."',
+          'Describe the mechanism — cognitive processing load as a systems problem',
+          'The blank page hypothesis — present as testable: "the bottleneck is initiation, not composition"',
+          'Brief personal context — paramedic, on the spectrum. Factual, not emotional',
+          'What you built, mechanically — how it works, not what it\'s called',
+          'Invite analytical feedback — "Does this match your processing pattern?"'
+        ],
+        provenHooks: [
+          '"I\'ve noticed a pattern in how I process difficult messages — the freeze isn\'t about the words"',
+          '"Observation: the barrier to replying isn\'t finding the right words — it\'s starting from nothing"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' },
+          { pattern: '\\bneurodivergent\\b', flags: 'i', message: 'Say Asperger\'s or autistic, not neurodivergent' },
+          { pattern: '\\bfree tool\\b', flags: 'i', message: '"Free tool" is product language' },
+          { pattern: '\\bI felt\\b', flags: 'i', message: 'This sub prefers "I noticed" over emotional framing' }
+        ],
+        doList: [
+          'Frame analytically — debate club, not support group',
+          'Lead with mechanism: "I noticed..." not "I felt..."',
+          'Use structured format (What / Why / How)',
+          'Be honest about AI if asked',
+          'Invite debate about the cognitive pattern'
+        ],
+        dontList: [
+          'Don\'t use emotional hooks as primary framing',
+          'Don\'t say "free tool" or "looking for feedback" in title',
+          'Don\'t be paternalistic',
+          'Don\'t use soft/emotional language as main hook'
+        ],
+        commentTone: 'Matter-of-fact, analytical, concise. Disagreement is normal here.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: true, requiresAuDHD: false }
+      },
+      {
+        id: 'adhdwomen',
+        name: 'r/adhdwomen',
+        members: '~538K',
+        scheduledDate: '2026-03-13T17:00:00Z',
+        angle: 'Question (shame spiral)',
+        flair: 'Emotional Regulation',
+        wordCountMin: 300, wordCountMax: 400,
+        linkStrategy: 'only-if-asked',
+        keyPoints: [
+          'Personal hook — a SPECIFIC freeze moment with physical feelings (chest tightens, stomach drops)',
+          'The shame spiral — longer you leave it, worse the anxiety, more you hate yourself',
+          'You\'re AuDHD and a paramedic — cardiac arrest vs email contrast',
+          'What you tried that didn\'t work',
+          'The blank page insight — personal discovery, NOT a tool pitch',
+          '"Does anyone else experience this?" — DO NOT say "I built something"'
+        ],
+        provenHooks: [
+          '"Does anyone else get the message freeze where you open it, panic, close it, and repeat for a week?"',
+          '"I\'m so tired of the shame spiral from not replying to messages"',
+          '"Does anyone else [specific struggle that sounds niche but is universal]?"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'CRITICAL: r/adhdwomen BANS AI output (2,163 upvote mod post)' },
+          { pattern: '\\b(check out|try this|download|sign up|visit|app|website)\\b', flags: 'i', message: 'CRITICAL: Hypervigilant about stealth advertising' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'CRITICAL: No URLs. Link ONLY if someone asks' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'CRITICAL: Product name must NEVER appear' },
+          { pattern: '\\b(I built|I made|I created|I found a tool|free tool|my tool|a tool)\\b', flags: 'i', message: 'CRITICAL: Do NOT mention building or finding a tool' },
+          { pattern: '\\bfree\\b', flags: 'i', message: '"Free" implies product — remove it' }
+        ],
+        doList: [
+          'This post is PURELY a personal story and a question',
+          'Describe the physical feeling of the freeze',
+          'Mention you\'re AuDHD and a paramedic',
+          'Let the community ask what you do about it'
+        ],
+        dontList: [
+          'DO NOT mention building anything',
+          'DO NOT mention a tool, app, or website',
+          'DO NOT link in post OR unprompted comment',
+          'DO NOT say "I found something that helps"',
+          'DO NOT use the word "free"',
+          'DO NOT post on a Saturday'
+        ],
+        commentTone: 'Warm, personal, "omg same" energy. Lots of emojis. Tips shared casually.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: true, requiresAuDHD: true }
+      },
+      {
+        id: 'neurodivergent',
+        name: 'r/neurodivergent',
+        members: '~14K',
+        scheduledDate: '2026-03-18T17:30:00Z',
+        angle: 'The cost of reply paralysis',
+        flair: '',
+        wordCountMin: 150, wordCountMax: 200,
+        linkStrategy: 'first-comment',
+        keyPoints: [
+          'The cost of reply paralysis — lost friendships, damaged work relationships',
+          'Brief context — AuDHD paramedic, one sentence',
+          'The blank page insight — one or two sentences',
+          'You built something for yourself — one sentence, don\'t describe features',
+          'Open question — "Does reply paralysis hit anyone else this hard?"'
+        ],
+        provenHooks: [
+          '"Reply paralysis has cost me friendships and I\'m tired of it"',
+          '"Anyone else lose relationships because you can\'t make yourself reply?"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' },
+          { pattern: '\\b(free tool|communication tool)\\b', flags: 'i', message: 'Product Hunt language — say "a small thing I made"' }
+        ],
+        doList: [
+          'Community-first: sharing, not announcing',
+          'Keep concise — 150-200 words',
+          'Lead with the cost/pain, not the solution'
+        ],
+        dontList: [
+          'Don\'t list features',
+          'Don\'t say "free" multiple times',
+          'Don\'t make the title about the tool'
+        ],
+        commentTone: 'Warm, inclusive, community-oriented.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: false, requiresAuDHD: true }
+      },
+      {
+        id: 'socialanxiety',
+        name: 'r/socialanxiety',
+        members: '~460K',
+        scheduledDate: '2026-03-19T13:00:00Z',
+        angle: 'Question (the freeze)',
+        flair: 'Discussion',
+        wordCountMin: 150, wordCountMax: 250,
+        linkStrategy: 'only-if-asked',
+        keyPoints: [
+          'The universal freeze — NO ND language. Just: "You open a message, brain locks up, close it. Repeat for days"',
+          'The shame compound — longer you leave it, worse it gets. Two sentences max',
+          '"I recently figured something out" — blank page insight, keep it vague',
+          'End with question — "Does anyone else experience this?" Full stop'
+        ],
+        provenHooks: [
+          '"Does anyone else freeze when they need to reply to a difficult message?"',
+          '"When you can\'t reply to a message and it ruins your whole day"'
+        ],
+        killSignals: [
+          { pattern: '\\b(AI|GPT|artificial intelligence|chatbot|language model)\\b', flags: 'i', message: 'AI mention detected' },
+          { pattern: '\\b(check out|try this|download|sign up|visit)\\b', flags: 'i', message: 'Promotional language detected' },
+          { pattern: 'https?:\\/\\/|www\\.', flags: 'i', message: 'URL in post body' },
+          { pattern: 'calm[\\s-]?reply', flags: 'i', message: 'Product name in post body' },
+          { pattern: '\\b(I built|I made|I created|free tool|my tool|a tool)\\b', flags: 'i', message: 'Do NOT mention building anything' },
+          { pattern: '\\b(autis|ADHD|AuDHD|neurodiverg|masking|stimming|RSD|rejection sensitiv)\\w*', flags: 'i', message: 'No ND language in r/socialanxiety — keep it universal' },
+          { pattern: '\\b(you should|try this|have you tried)\\b', flags: 'i', message: 'No prescriptive advice' }
+        ],
+        doList: [
+          'Universal anxiety framing — no ND identity',
+          'Keep SHORT — under 250 words',
+          'Use "Success" flair if sharing something helped',
+          'Post the feeling, wait, share only when asked'
+        ],
+        dontList: [
+          'DO NOT mention building anything',
+          'DO NOT mention a tool in the post body',
+          'DO NOT mention autism, ADHD, or neurodivergence',
+          'DO NOT use clinical language',
+          'DO NOT post a first comment with a link',
+          'DO NOT use prescriptive language'
+        ],
+        commentTone: 'Quiet, empathetic, short. Don\'t force engagement.',
+        structureChecks: { requiresQuestion: true, requiresFirstPerson: true, requiresParamedic: false, requiresAuDHD: false }
+      }
+    ];
+
+    // ════════════════════════════════════════════════════════════
+    // State Management
+    // ════════════════════════════════════════════════════════════
+    const STORAGE_KEY = 'reddit-coach';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('Failed to load state from localStorage:', e);
+      }
+      return null;
+    }
+
+    function saveState(state) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('Failed to save state to localStorage:', e);
+      }
+    }
+
+    function getState() {
+      let state = loadState();
+      if (!state || !state.posts) {
+        state = { posts: {}, memory: [] };
+        SUBS.forEach(function(sub) {
+          state.posts[sub.id] = { status: 'upcoming', title: '', body: '', firstComment: '' };
+        });
+        saveState(state);
+      }
+      // Ensure all subs exist in state (in case new subs were added)
+      SUBS.forEach(function(sub) {
+        if (!state.posts[sub.id]) {
+          state.posts[sub.id] = { status: 'upcoming', title: '', body: '', firstComment: '' };
+        }
+      });
+      if (!state.memory) state.memory = [];
+      return state;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Screen Navigation
+    // ════════════════════════════════════════════════════════════
+    function showScreen(id) {
+      var screens = document.querySelectorAll('.screen');
+      for (var i = 0; i < screens.length; i++) {
+        screens[i].classList.remove('active');
+      }
+      var target = document.getElementById(id);
+      if (target) target.classList.add('active');
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Writer Stub
+    // ════════════════════════════════════════════════════════════
+    function openWriter(subId) {
+      console.log('open', subId);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Schedule Dashboard
+    // ════════════════════════════════════════════════════════════
+    function formatDate(isoString) {
+      var d = new Date(isoString);
+      var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      var day = days[d.getDay()];
+      var date = d.getDate();
+      var month = months[d.getMonth()];
+      var hours = d.getHours();
+      var minutes = d.getMinutes();
+      var ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      var minuteStr = minutes < 10 ? '0' + minutes : '' + minutes;
+      return day + ' ' + date + ' ' + month + ' at ' + hours + ':' + minuteStr + ampm;
+    }
+
+    function getStatusClass(status) {
+      switch (status) {
+        case 'draft-started': return 'status-draft-started';
+        case 'ready': return 'status-ready';
+        case 'posted': return 'status-posted';
+        default: return 'status-upcoming';
+      }
+    }
+
+    function getStatusLabel(status) {
+      switch (status) {
+        case 'draft-started': return 'Draft Started';
+        case 'ready': return 'Ready';
+        case 'posted': return 'Posted';
+        default: return 'Upcoming';
+      }
+    }
+
+    function renderSchedule() {
+      var state = getState();
+      var list = document.getElementById('schedule-list');
+      list.innerHTML = '';
+
+      // Sort subs by scheduled date
+      var sorted = SUBS.slice().sort(function(a, b) {
+        return new Date(a.scheduledDate) - new Date(b.scheduledDate);
+      });
+
+      // Find first upcoming (not posted, not ready) sub
+      var nextUpId = null;
+      for (var i = 0; i < sorted.length; i++) {
+        var postState = state.posts[sorted[i].id];
+        if (postState && postState.status !== 'posted' && postState.status !== 'ready') {
+          nextUpId = sorted[i].id;
+          break;
+        }
+      }
+
+      for (var j = 0; j < sorted.length; j++) {
+        var sub = sorted[j];
+        var post = state.posts[sub.id] || { status: 'upcoming' };
+        var isNext = sub.id === nextUpId;
+
+        var card = document.createElement('div');
+        card.className = 'sub-card' + (isNext ? ' next-up' : '');
+        card.setAttribute('data-sub-id', sub.id);
+        card.addEventListener('click', (function(id) {
+          return function() { openWriter(id); };
+        })(sub.id));
+
+        var html = '';
+
+        if (isNext) {
+          html += '<div class="next-label">Write this one next</div>';
+        }
+
+        html += '<div class="sub-card-header">';
+        html += '<span><span class="sub-card-name">' + sub.name + '</span>';
+        html += '<span class="sub-card-members">' + sub.members + '</span></span>';
+        html += '<span class="status-pill ' + getStatusClass(post.status) + '">' + getStatusLabel(post.status) + '</span>';
+        html += '</div>';
+
+        html += '<div class="sub-card-meta">';
+        html += '<div class="date">' + formatDate(sub.scheduledDate) + '</div>';
+        html += '<div class="angle">' + sub.angle + '</div>';
+        html += '<div class="sub-card-word-range">' + sub.wordCountMin + '–' + sub.wordCountMax + ' words &middot; Link: ' + sub.linkStrategy + '</div>';
+        if (sub.flair) {
+          html += '<span class="flair">' + sub.flair + '</span>';
+        }
+        html += '</div>';
+
+        card.innerHTML = html;
+        list.appendChild(card);
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Init
+    // ════════════════════════════════════════════════════════════
+    renderSchedule();
+  </script>
+</body>
+</html>
