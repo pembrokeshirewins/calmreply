@@ -568,6 +568,12 @@
 
   <script>
     // ════════════════════════════════════════════════════════════
+    // Webhook URLs
+    // ════════════════════════════════════════════════════════════
+    var N8N_COACH_URL = 'https://aswales.app.n8n.cloud/webhook/calmreply-reddit-coach';
+    var N8N_SAVE_URL = 'https://aswales.app.n8n.cloud/webhook/calmreply-reddit-save';
+
+    // ════════════════════════════════════════════════════════════
     // Subreddit Intelligence Data
     // ════════════════════════════════════════════════════════════
     const SUBS = [
@@ -964,6 +970,31 @@
     }
 
     // ════════════════════════════════════════════════════════════
+    // Memory System
+    // ════════════════════════════════════════════════════════════
+    function getMemory() {
+      var state = getState();
+      return state.memory || [];
+    }
+
+    function addToMemory(subId, body) {
+      var state = getState();
+      if (!state.memory) state.memory = [];
+      var found = false;
+      for (var i = 0; i < state.memory.length; i++) {
+        if (state.memory[i].subreddit === subId) {
+          state.memory[i].body = body;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        state.memory.push({ subreddit: subId, body: body });
+      }
+      saveState(state);
+    }
+
+    // ════════════════════════════════════════════════════════════
     // Screen Navigation
     // ════════════════════════════════════════════════════════════
     function showScreen(id) {
@@ -1104,7 +1135,7 @@
       html += '<div class="writer-actions">';
       html += '<button class="btn-score" onclick="scoreDraft();">Score My Draft</button>';
       html += '<button class="btn-generate" id="btnGenerate" onclick="doItForMe();">Do It For Me</button>';
-      html += '<button class="btn-notion" onclick="saveToNotion();">Save to Notion</button>';
+      html += '<button class="btn-notion" id="btnSave" onclick="saveToNotion();">Save to Notion</button>';
       html += '</div>';
 
       // ── Score Report ──
@@ -1414,12 +1445,141 @@
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function doItForMe() {
-      console.log('generate');
+    async function doItForMe() {
+      var btn = document.getElementById('btnGenerate');
+      var originalText = btn.textContent;
+      btn.textContent = 'Generating...';
+      btn.disabled = true;
+
+      try {
+        var titleEl = document.getElementById('postTitle');
+        var bodyEl = document.getElementById('postBody');
+        var memory = getMemory();
+
+        var response = await fetch(N8N_COACH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subreddit: currentSub.id,
+            userNotes: bodyEl.value,
+            title: titleEl.value,
+            previousPosts: memory
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Server returned ' + response.status + ': ' + response.statusText);
+        }
+
+        var data = await response.json();
+
+        if (data.title) {
+          titleEl.value = data.title;
+        }
+        if (data.body) {
+          bodyEl.value = data.body;
+        }
+        if (data.firstComment) {
+          var commentEl = document.getElementById('firstComment');
+          if (commentEl) commentEl.value = data.firstComment;
+        }
+
+        updateWordCount();
+
+        if (data.notes) {
+          var reportEl = document.getElementById('scoreReport');
+          if (reportEl) {
+            reportEl.innerHTML = '<div class="score-report-card" style="border-left: 4px solid var(--accent);">' +
+              '<div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px;">AI Notes</div>' +
+              '<div style="font-size: 0.9rem; line-height: 1.6; color: var(--text); white-space: pre-wrap;">' + escapeHtml(data.notes) + '</div>' +
+              '</div>';
+          }
+        }
+
+        autoSaveDraft();
+      } catch (err) {
+        alert('Generation failed: ' + err.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     }
 
-    function saveToNotion() {
-      console.log('save');
+    async function saveToNotion() {
+      var bodyEl = document.getElementById('postBody');
+      var bodyText = bodyEl ? bodyEl.value.trim() : '';
+      if (!bodyText) {
+        alert('Write something first!');
+        return;
+      }
+
+      var btn = document.getElementById('btnSave');
+      var originalText = btn.textContent;
+      var originalBg = btn.style.background;
+      var originalColor = btn.style.color;
+      var originalBorder = btn.style.borderColor;
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        var titleEl = document.getElementById('postTitle');
+        var commentEl = document.getElementById('firstComment');
+        var commentVal = commentEl ? commentEl.value.trim() : '';
+
+        var response = await fetch(N8N_SAVE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subreddit: currentSub.name,
+            scheduledDate: currentSub.scheduledDate,
+            title: titleEl ? titleEl.value : '',
+            body: bodyText,
+            firstComment: commentVal || null,
+            score: lastScore,
+            linkStrategy: currentSub.linkStrategy
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Server returned ' + response.status + ': ' + response.statusText);
+        }
+
+        var data = await response.json();
+
+        // Update localStorage status to ready
+        var state = getState();
+        if (state.posts[currentSub.id]) {
+          state.posts[currentSub.id].status = 'ready';
+          saveState(state);
+        }
+
+        // Add to memory
+        addToMemory(currentSub.id, bodyText);
+
+        // Style button as success
+        btn.textContent = 'Saved!';
+        btn.style.background = 'var(--success)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--success)';
+
+        // Append Notion link if present
+        if (data.notionUrl) {
+          var linkEl = document.createElement('a');
+          linkEl.href = data.notionUrl;
+          linkEl.target = '_blank';
+          linkEl.rel = 'noopener noreferrer';
+          linkEl.textContent = 'Open in Notion';
+          linkEl.style.cssText = 'display: block; text-align: center; margin-top: 8px; font-size: 0.875rem; font-weight: 600; color: var(--accent);';
+          btn.parentNode.insertBefore(linkEl, btn.nextSibling);
+        }
+      } catch (err) {
+        alert('Save failed: ' + err.message);
+        btn.textContent = originalText;
+        btn.style.background = originalBg;
+        btn.style.color = originalColor;
+        btn.style.borderColor = originalBorder;
+        btn.disabled = false;
+      }
     }
 
     // ════════════════════════════════════════════════════════════
