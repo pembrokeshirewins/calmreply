@@ -464,6 +464,71 @@
       margin-top: 16px;
     }
 
+    .score-report-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .score-big {
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .score-label {
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+
+    .score-category {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .score-category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .score-category-name {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .score-category-weight {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    .score-category-score {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    .score-check {
+      font-size: 0.85rem;
+      line-height: 1.7;
+      padding-left: 4px;
+    }
+
+    .score-check-pass {
+      color: var(--success);
+    }
+
+    .score-check-fail {
+      color: var(--error);
+    }
+
     /* ── Responsive ── */
     @media (max-width: 480px) {
       body {
@@ -915,6 +980,7 @@
     // ════════════════════════════════════════════════════════════
     var currentSub = null;
     var autoSaveTimer = null;
+    var lastScore = 0;
 
     function openWriter(subId) {
       // Find the sub in the SUBS array
@@ -1119,9 +1185,233 @@
       }, 1000);
     }
 
-    // ── Action Button Stubs ──
+    // ── Scoring Engine ──
     function scoreDraft() {
-      console.log('score');
+      if (!currentSub) return;
+
+      var title = (document.getElementById('postTitle').value || '').trim();
+      var body = (document.getElementById('postBody').value || '').trim();
+      var results = [];
+
+      // ── 1. Title Quality (weight: 25%) ──
+      var titleScore = 10;
+      var titleChecks = [];
+      if (!title) {
+        titleScore = 0;
+        titleChecks.push({ pass: false, message: 'Title is empty' });
+      } else {
+        // Promotional words
+        var promoWords = ['free', 'tool', 'app', 'website', 'built', 'made', 'created', 'check out', 'try this', 'looking for feedback'];
+        for (var p = 0; p < promoWords.length; p++) {
+          var promoRe = new RegExp('\\b' + promoWords[p].replace(/\s+/g, '\\s+') + '\\b', 'i');
+          if (promoRe.test(title)) {
+            titleScore -= 3;
+            titleChecks.push({ pass: false, message: 'Promotional word in title: "' + promoWords[p] + '"' });
+          }
+        }
+        if (titleChecks.length === 0 || titleChecks.every(function(c) { return c.pass; })) {
+          titleChecks.push({ pass: true, message: 'No promotional words in title' });
+        }
+
+        // Question/hook format
+        var questionWordRe = /^(does|do|has|have|is|am|are|what|why|how|who|when|anyone)\b/i;
+        if (title.indexOf('?') !== -1 || questionWordRe.test(title)) {
+          titleChecks.push({ pass: true, message: 'Title uses question/hook format' });
+        } else {
+          titleScore -= 1;
+          titleChecks.push({ pass: false, message: 'Consider starting with a question or "Does anyone else..."' });
+        }
+
+        // Title length
+        if (title.length > 120) {
+          titleScore -= 1;
+          titleChecks.push({ pass: false, message: 'Title is over 120 characters (' + title.length + ')' });
+        } else {
+          titleChecks.push({ pass: true, message: 'Title length OK (' + title.length + ' chars)' });
+        }
+      }
+      if (titleScore < 0) titleScore = 0;
+      results.push({ name: 'Title Quality', weight: 25, score: titleScore, checks: titleChecks });
+
+      // ── 2. Kill Signals (weight: 25%) ──
+      var killScore = 10;
+      var killChecks = [];
+      var killSignals = currentSub.killSignals || [];
+      for (var ks = 0; ks < killSignals.length; ks++) {
+        var signal = killSignals[ks];
+        var sigRe = new RegExp(signal.pattern, signal.flags);
+        var foundIn = [];
+        if (sigRe.test(title)) foundIn.push('title');
+        if (sigRe.test(body)) foundIn.push('body');
+        if (foundIn.length > 0) {
+          killScore -= 3;
+          killChecks.push({ pass: false, message: signal.message + ' (found in ' + foundIn.join(' and ') + ')' });
+        }
+      }
+      if (killScore < 0) killScore = 0;
+      if (killChecks.length === 0) {
+        killChecks.push({ pass: true, message: 'No kill signals detected' });
+      }
+      results.push({ name: 'Kill Signals', weight: 25, score: killScore, checks: killChecks });
+
+      // ── 3. Word Count (weight: 15%) ──
+      var wordCount = countWords(body);
+      var wcMin = currentSub.wordCountMin;
+      var wcMax = currentSub.wordCountMax;
+      var wcScore = 0;
+      var wcChecks = [];
+      if (wordCount === 0) {
+        wcScore = 0;
+        wcChecks.push({ pass: false, message: 'No post body written yet' });
+      } else if (wordCount < wcMin) {
+        wcScore = (wordCount < wcMin * 0.5) ? 2 : 5;
+        wcChecks.push({ pass: false, message: wordCount + ' words — target is ' + wcMin + '\u2013' + wcMax + '. Add more detail' });
+      } else if (wordCount > wcMax) {
+        wcScore = (wordCount > wcMax * 1.5) ? 3 : 6;
+        wcChecks.push({ pass: false, message: wordCount + ' words — target is ' + wcMin + '\u2013' + wcMax + '. Cut it down' });
+      } else {
+        wcScore = 10;
+        wcChecks.push({ pass: true, message: wordCount + ' words — within target range (' + wcMin + '\u2013' + wcMax + ')' });
+      }
+      results.push({ name: 'Word Count', weight: 15, score: wcScore, checks: wcChecks });
+
+      // ── 4. Structure (weight: 20%) ──
+      var structScore = 10;
+      var structChecks = [];
+      var checks = currentSub.structureChecks || {};
+
+      if (checks.requiresQuestion) {
+        if (body.indexOf('?') !== -1) {
+          structChecks.push({ pass: true, message: 'Body contains a question' });
+        } else {
+          structScore -= 3;
+          structChecks.push({ pass: false, message: 'Body should contain a question' });
+        }
+      }
+
+      if (checks.requiresFirstPerson) {
+        var fpRe = /\bI\b/;
+        if (fpRe.test(body)) {
+          structChecks.push({ pass: true, message: 'First person voice detected' });
+        } else {
+          structScore -= 3;
+          structChecks.push({ pass: false, message: 'Write in first person (use "I")' });
+        }
+      }
+
+      if (checks.requiresParamedic) {
+        var paramRe = /paramedic/i;
+        if (paramRe.test(body)) {
+          structChecks.push({ pass: true, message: 'Paramedic context included' });
+        } else {
+          structScore -= 2;
+          structChecks.push({ pass: false, message: 'Mention being a paramedic' });
+        }
+      }
+
+      if (checks.requiresAuDHD) {
+        var audhdRe = /\b(AuDHD|autis\w+ (with|and) ADHD|ADHD (and|with) autis\w+)\b/i;
+        if (audhdRe.test(body)) {
+          structChecks.push({ pass: true, message: 'AuDHD identity mentioned' });
+        } else {
+          structScore -= 2;
+          structChecks.push({ pass: false, message: 'Mention being AuDHD' });
+        }
+      }
+
+      if (structScore < 0) structScore = 0;
+      if (structChecks.length === 0) {
+        structChecks.push({ pass: true, message: 'No structure requirements for this sub' });
+      }
+      results.push({ name: 'Structure', weight: 20, score: structScore, checks: structChecks });
+
+      // ── 5. Link Discipline (weight: 15%) ──
+      var linkScore = 10;
+      var linkChecks = [];
+
+      var urlRe = /https?:\/\/|www\./;
+      if (urlRe.test(body)) {
+        linkScore -= 5;
+        linkChecks.push({ pass: false, message: 'URL found in post body' });
+      }
+
+      var productRe = /calm[\s-]?reply/i;
+      if (productRe.test(body)) {
+        linkScore -= 5;
+        linkChecks.push({ pass: false, message: 'Product name found in post body' });
+      }
+
+      if (linkScore < 0) linkScore = 0;
+      if (linkChecks.length === 0) {
+        linkChecks.push({ pass: true, message: 'No links or product names in body' });
+      }
+      results.push({ name: 'Link Discipline', weight: 15, score: linkScore, checks: linkChecks });
+
+      // ── Weighted total ──
+      var weightedSum = 0;
+      var weightTotal = 0;
+      for (var r = 0; r < results.length; r++) {
+        weightedSum += results[r].score * results[r].weight;
+        weightTotal += results[r].weight;
+      }
+      var finalScore = Math.round((weightedSum / weightTotal) * 10) / 10;
+
+      lastScore = finalScore;
+      renderScoreReport(finalScore, results);
+    }
+
+    function renderScoreReport(score, results) {
+      var el = document.getElementById('scoreReport');
+      if (!el) return;
+
+      // Determine colour and label
+      var colour = '';
+      var label = '';
+      if (score >= 8) {
+        colour = 'var(--success)';
+        label = 'Ready to post';
+      } else if (score >= 5) {
+        colour = 'var(--warning)';
+        label = 'Getting there';
+      } else {
+        colour = 'var(--error)';
+        label = 'Needs work';
+      }
+
+      var html = '<div class="score-report-card">';
+
+      // Big score number
+      html += '<div class="score-big" style="color: ' + colour + ';">' + score.toFixed(1) + '/10</div>';
+      html += '<div class="score-label" style="color: ' + colour + ';">' + label + '</div>';
+
+      // Categories
+      for (var i = 0; i < results.length; i++) {
+        var cat = results[i];
+        var catColour = cat.score >= 8 ? 'var(--success)' : (cat.score >= 5 ? 'var(--warning)' : 'var(--error)');
+
+        html += '<div class="score-category">';
+        html += '<div class="score-category-header">';
+        html += '<span class="score-category-name">' + cat.name + ' <span class="score-category-weight">(' + cat.weight + '%)</span></span>';
+        html += '<span class="score-category-score" style="color: ' + catColour + ';">' + cat.score + '/10</span>';
+        html += '</div>';
+
+        for (var c = 0; c < cat.checks.length; c++) {
+          var check = cat.checks[c];
+          if (check.pass) {
+            html += '<div class="score-check score-check-pass">\u2713 ' + check.message + '</div>';
+          } else {
+            html += '<div class="score-check score-check-fail">\u2717 ' + check.message + '</div>';
+          }
+        }
+
+        html += '</div>';
+      }
+
+      html += '</div>';
+      el.innerHTML = html;
+
+      // Scroll score report into view
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function doItForMe() {
