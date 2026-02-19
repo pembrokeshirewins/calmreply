@@ -197,15 +197,271 @@
       margin-top: 2px;
     }
 
-    /* ── Writer placeholder ── */
-    #writer .placeholder-msg {
+    /* ── Writer Screen ── */
+    .writer-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-bottom: 12px;
+    }
+
+    .writer-back:hover {
+      color: var(--accent-hover);
+    }
+
+    .writer-header {
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 40px 24px;
-      text-align: center;
-      margin-top: 24px;
+      padding: 20px 24px;
+      margin-top: 8px;
+    }
+
+    .writer-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .writer-header-meta {
+      font-size: 0.875rem;
       color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    .writer-header-meta .flair-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    .writer-header-meta .link-strategy-note {
+      display: block;
+      margin-top: 6px;
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+
+    /* ── Cheat Sheet ── */
+    .cheat-sheet {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 16px;
+    }
+
+    .cheat-sheet summary {
+      padding: 16px 24px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cheat-sheet summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .cheat-sheet summary::after {
+      content: '\25BC';
+      font-size: 0.7rem;
+      color: var(--text-light);
+      transition: transform 0.2s ease;
+    }
+
+    .cheat-sheet[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .cheat-sheet-body {
+      padding: 0 24px 20px;
+    }
+
+    .cheat-sheet-section {
+      margin-bottom: 16px;
+    }
+
+    .cheat-sheet-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .cheat-sheet-section h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .cheat-sheet-section ol,
+    .cheat-sheet-section ul {
+      padding-left: 20px;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .cheat-sheet-section .hook-item {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .do-dont-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .do-dont-grid ul {
+      list-style: none;
+      padding-left: 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .do-dont-grid .do-item {
+      color: var(--success);
+    }
+
+    .do-dont-grid .dont-item {
+      color: var(--error);
+    }
+
+    .cheat-sheet-section .comment-tone {
+      font-size: 0.875rem;
+      color: var(--text);
+      font-style: italic;
+    }
+
+    /* ── Writer Inputs ── */
+    .writer-inputs {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
+
+    .writer-inputs label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .writer-inputs input[type="text"],
+    .writer-inputs textarea {
+      display: block;
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      transition: border-color 0.15s ease;
+      resize: vertical;
+    }
+
+    .writer-inputs input[type="text"]:focus,
+    .writer-inputs textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .writer-inputs .field-group {
+      margin-bottom: 16px;
+    }
+
+    .writer-inputs .field-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .word-count {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .word-count.in-range {
+      color: var(--success);
+    }
+
+    .word-count.near-range {
+      color: var(--warning);
+    }
+
+    .word-count.out-of-range {
+      color: var(--error);
+    }
+
+    /* ── Action Buttons ── */
+    .writer-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .writer-actions button {
+      flex: 1;
+      min-width: 120px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .writer-actions button:hover {
+      opacity: 0.85;
+    }
+
+    .btn-score {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-generate {
+      background: var(--text);
+      color: #fff;
+    }
+
+    .btn-notion {
+      background: #fff;
+      color: var(--accent);
+      border-color: var(--accent) !important;
+    }
+
+    /* ── Score Report ── */
+    #scoreReport {
+      margin-top: 16px;
     }
 
     /* ── Responsive ── */
@@ -242,7 +498,7 @@
 
   <!-- ── Writer Screen ── -->
   <div id="writer" class="screen">
-    <div class="placeholder-msg">Writer will be built in the next task.</div>
+    <div id="writer-content"></div>
   </div>
 
   <script>
@@ -655,10 +911,225 @@
     }
 
     // ════════════════════════════════════════════════════════════
-    // Writer Stub
+    // Writer Screen
     // ════════════════════════════════════════════════════════════
+    var currentSub = null;
+    var autoSaveTimer = null;
+
     function openWriter(subId) {
-      console.log('open', subId);
+      // Find the sub in the SUBS array
+      var sub = null;
+      for (var i = 0; i < SUBS.length; i++) {
+        if (SUBS[i].id === subId) {
+          sub = SUBS[i];
+          break;
+        }
+      }
+      if (!sub) return;
+      currentSub = sub;
+
+      var state = getState();
+      var post = state.posts[sub.id] || { status: 'upcoming', title: '', body: '', firstComment: '' };
+
+      // Build link strategy text
+      var linkNote = '';
+      if (sub.linkStrategy === 'first-comment') {
+        linkNote = 'Post link in first comment';
+      } else {
+        linkNote = 'ONLY share link if someone asks';
+      }
+
+      // Build first comment placeholder
+      var firstCommentPlaceholder = '';
+      if (sub.linkStrategy === 'first-comment') {
+        firstCommentPlaceholder = 'Draft your first comment here — include a brief context and the link...';
+      } else {
+        firstCommentPlaceholder = 'Only post a comment with a link if someone explicitly asks...';
+      }
+
+      // ── Header ──
+      var html = '';
+      html += '<button class="writer-back" onclick="showScreen(\'schedule\'); renderSchedule();">';
+      html += '&larr; Back to schedule</button>';
+
+      html += '<div class="writer-header">';
+      html += '<h2>' + sub.name + '</h2>';
+      html += '<div class="writer-header-meta">';
+      html += '<div>' + formatDate(sub.scheduledDate) + '</div>';
+      html += '<div>' + sub.wordCountMin + '&ndash;' + sub.wordCountMax + ' words</div>';
+      if (sub.flair) {
+        html += '<span class="flair-tag">Flair: ' + sub.flair + '</span>';
+      }
+      html += '<span class="link-strategy-note">' + linkNote + '</span>';
+      html += '</div></div>';
+
+      // ── Cheat Sheet ──
+      html += '<details class="cheat-sheet">';
+      html += '<summary>Cheat Sheet</summary>';
+      html += '<div class="cheat-sheet-body">';
+
+      // Key points
+      html += '<div class="cheat-sheet-section">';
+      html += '<h4>Key Points to Hit</h4>';
+      html += '<ol>';
+      for (var k = 0; k < sub.keyPoints.length; k++) {
+        html += '<li>' + sub.keyPoints[k] + '</li>';
+      }
+      html += '</ol></div>';
+
+      // Proven hooks
+      html += '<div class="cheat-sheet-section">';
+      html += '<h4>Proven Hooks</h4>';
+      html += '<ul>';
+      for (var h = 0; h < sub.provenHooks.length; h++) {
+        html += '<li class="hook-item">' + sub.provenHooks[h] + '</li>';
+      }
+      html += '</ul></div>';
+
+      // DO / DON'T grid
+      html += '<div class="cheat-sheet-section">';
+      html += '<h4>Do / Don\'t</h4>';
+      html += '<div class="do-dont-grid">';
+      html += '<ul>';
+      for (var d = 0; d < sub.doList.length; d++) {
+        html += '<li class="do-item">' + sub.doList[d] + '</li>';
+      }
+      html += '</ul>';
+      html += '<ul>';
+      for (var n = 0; n < sub.dontList.length; n++) {
+        html += '<li class="dont-item">' + sub.dontList[n] + '</li>';
+      }
+      html += '</ul>';
+      html += '</div></div>';
+
+      // Comment tone
+      html += '<div class="cheat-sheet-section">';
+      html += '<h4>Comment Tone</h4>';
+      html += '<p class="comment-tone">' + sub.commentTone + '</p>';
+      html += '</div>';
+
+      html += '</div></details>';
+
+      // ── Input Area ──
+      html += '<div class="writer-inputs">';
+
+      // Title
+      html += '<div class="field-group">';
+      html += '<label for="postTitle">Title</label>';
+      html += '<input type="text" id="postTitle" placeholder="Lead with a feeling or question, not a product..." value="' + escapeAttr(post.title) + '" oninput="autoSaveDraft(); updateWordCount();">';
+      html += '</div>';
+
+      // Body
+      html += '<div class="field-group">';
+      html += '<label for="postBody">Body</label>';
+      html += '<textarea id="postBody" rows="14" placeholder="Write your rough notes here..." oninput="autoSaveDraft(); updateWordCount();">' + escapeHtml(post.body) + '</textarea>';
+      html += '<div class="word-count" id="wordCount">0 / ' + sub.wordCountMin + '&ndash;' + sub.wordCountMax + ' words</div>';
+      html += '</div>';
+
+      // First comment
+      html += '<div class="field-group">';
+      html += '<label for="firstComment">First Comment</label>';
+      html += '<textarea id="firstComment" rows="3" placeholder="' + escapeAttr(firstCommentPlaceholder) + '" oninput="autoSaveDraft();">' + escapeHtml(post.firstComment) + '</textarea>';
+      html += '</div>';
+
+      html += '</div>';
+
+      // ── Action Buttons ──
+      html += '<div class="writer-actions">';
+      html += '<button class="btn-score" onclick="scoreDraft();">Score My Draft</button>';
+      html += '<button class="btn-generate" id="btnGenerate" onclick="doItForMe();">Do It For Me</button>';
+      html += '<button class="btn-notion" onclick="saveToNotion();">Save to Notion</button>';
+      html += '</div>';
+
+      // ── Score Report ──
+      html += '<div id="scoreReport"></div>';
+
+      // Render
+      document.getElementById('writer-content').innerHTML = html;
+      showScreen('writer');
+
+      // Update word count on load
+      updateWordCount();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function countWords(text) {
+      if (!text || !text.trim()) return 0;
+      return text.trim().split(/\s+/).length;
+    }
+
+    function updateWordCount() {
+      if (!currentSub) return;
+      var body = document.getElementById('postBody');
+      var countEl = document.getElementById('wordCount');
+      if (!body || !countEl) return;
+
+      var count = countWords(body.value);
+      var min = currentSub.wordCountMin;
+      var max = currentSub.wordCountMax;
+
+      // Determine colour class
+      var cls = 'out-of-range';
+      if (count >= min && count <= max) {
+        cls = 'in-range';
+      } else {
+        // Within 30% of bounds = amber
+        var lowerBound = Math.floor(min * 0.7);
+        var upperBound = Math.ceil(max * 1.3);
+        if (count >= lowerBound && count <= upperBound) {
+          cls = 'near-range';
+        }
+      }
+
+      countEl.className = 'word-count ' + cls;
+      countEl.innerHTML = count + ' / ' + min + '&ndash;' + max + ' words';
+    }
+
+    function autoSaveDraft() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function() {
+        if (!currentSub) return;
+        var title = document.getElementById('postTitle');
+        var body = document.getElementById('postBody');
+        var comment = document.getElementById('firstComment');
+
+        var state = getState();
+        var post = state.posts[currentSub.id];
+        post.title = title ? title.value : '';
+        post.body = body ? body.value : '';
+        post.firstComment = comment ? comment.value : '';
+
+        // Set status to draft-started if there is content
+        if (post.title.trim() || post.body.trim() || post.firstComment.trim()) {
+          if (post.status === 'upcoming') {
+            post.status = 'draft-started';
+          }
+        }
+
+        saveState(state);
+      }, 1000);
+    }
+
+    // ── Action Button Stubs ──
+    function scoreDraft() {
+      console.log('score');
+    }
+
+    function doItForMe() {
+      console.log('generate');
+    }
+
+    function saveToNotion() {
+      console.log('save');
     }
 
     // ════════════════════════════════════════════════════════════
