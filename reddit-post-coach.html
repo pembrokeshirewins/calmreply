@@ -927,6 +927,130 @@
       }
     ];
 
+    // ── Sub-specific voice profiles for the Voice & Authenticity scorer ──
+    // Each profile defines what THIS sub values in writing style, drawn from the intelligence doc.
+    var VOICE_PROFILES = {
+      'ADHD': {
+        style: 'r/ADHD wants warm chaos, self-deprecating humour, and ADHD-specific relatability. Stories > analysis.',
+        rewards: [
+          { pattern: '\\b(lol|lmao|haha|tbh|ngl|omg)\\b|:\\)|;\\)|:D|:P', flags: 'i', points: 1, message: 'Humour markers — r/ADHD loves chaotic self-aware energy' },
+          { pattern: '\\b(embarrassing|cringe|terrible at|awful at|can\'t even|my brain just|I\'m the worst|I\'m so bad at|plot twist|the irony)\\b', flags: 'i', points: 1, message: 'Self-deprecation — strong authenticity signal for r/ADHD' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific lived details — anchors your story as real' },
+          { pattern: '\\b(chest tight|stomach drop|heart rac|palms|throat|physically|thump|punch in the gut|felt sick|couldn\'t breathe|froze|freezing)\\b', flags: 'i', points: 1, message: 'Physical sensations — high-performing in ADHD subs' },
+          { pattern: '\\b(cos|gonna|kinda|wanna|innit|rubbish|bloody|mate|sorted|reckon|proper|knackered)\\b|\\.\\.\\.', flags: 'i', points: 1, message: 'Informal language — sounds like a real person, not a template' },
+          { pattern: '\\b(does anyone else|DAE|anyone else)\\b', flags: 'i', points: 1, message: '"Does anyone else" — highest engagement format in r/ADHD' }
+        ],
+        penalties: [
+          { pattern: '\\b(executive function|prefrontal cortex|dopamine receptor|neurotypical processing)\\b', flags: 'i', points: 1, message: 'Clinical lecture language — r/ADHD wants personal stories, not science papers' }
+        ],
+        emojiBonus: 0
+      },
+      'AutisticAdults': {
+        style: 'r/AutisticAdults wants brief, practical, adult-life-focused posts. Matter-of-fact, not dramatic.',
+        rewards: [
+          { pattern: '\\b(work|email|boss|meeting|deadline|invoice|colleague|office|job|career)\\b', flags: 'i', points: 1, message: 'Adult life specifics — r/AutisticAdults focuses on career and practical challenges' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific details ground the post in reality' },
+          { pattern: '\\b(I (tried|started|stopped|realised|figured|noticed)|what (worked|helped)|the thing (is|was))\\b', flags: 'i', points: 1, message: 'Practical/matter-of-fact framing — fits r/AutisticAdults tone' },
+          { pattern: '\\b(does anyone else|DAE|anyone else|is this an? .* thing)\\b', flags: 'i', points: 1, message: 'Shared experience question — drives engagement' }
+        ],
+        penalties: [
+          { pattern: '(!.*!.*!|!!)', flags: '', points: 1, message: 'Multiple exclamation marks — r/AutisticAdults prefers understated tone' }
+        ],
+        emojiBonus: 0
+      },
+      'autism': {
+        style: 'r/autism values intellectual engagement alongside personal experience. Describe the processing, not just the feeling.',
+        rewards: [
+          { pattern: '\\b(process(ing|es)?|cognitive load|bandwidth|overwhelm(ed|ing)?|overloaded|shutdown|meltdown)\\b', flags: 'i', points: 1, message: 'Processing/cognitive language — r/autism rewards describing the autistic experience specifically' },
+          { pattern: '\\b(mask(ing|ed)?|unmasking|burnout|autistic (burnout|fatigue|inertia))\\b', flags: 'i', points: 1, message: 'Masking/burnout reference — strong signal for r/autism' },
+          { pattern: '\\b(autistic|on the spectrum|my autism)\\b', flags: 'i', points: 1, message: 'Uses "autistic" not "neurodivergent" — r/autism values specificity' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific lived details — anchors the story' },
+          { pattern: '\\b(what do (you|others)|how do you|does anyone|curious (if|whether))\\b', flags: 'i', points: 1, message: 'Genuine question — r/autism rewards intellectual engagement and discussion' }
+        ],
+        penalties: [
+          { pattern: '\\b(you should|just (try|do|be|think)|it\'s (simple|easy)|all you need)\\b', flags: 'i', points: 1, message: 'Preachy/prescriptive tone — r/autism hates being told what to do' },
+          { pattern: '\\b(we\'re all a little autistic|everyone does that|that\'s just being human)\\b', flags: 'i', points: 2, message: 'Minimising the autistic experience — r/autism will destroy you for this' }
+        ],
+        emojiBonus: 0
+      },
+      'AutisticWithADHD': {
+        style: 'r/AutisticWithADHD is YOUR community. Go deep, be funny, describe the push-pull. Longest posts welcome.',
+        rewards: [
+          { pattern: '\\b(AuDHD|autism.*ADHD|ADHD.*autism|push.?pull|one part.*other part)\\b', flags: 'i', points: 2, message: 'AuDHD push-pull framing — THE defining feature of good posts in this sub' },
+          { pattern: '\\b(RSD|rejection sensitiv|took it personally|spiral(led)?)\\b', flags: 'i', points: 1, message: 'RSD/emotional dysregulation — deeply relatable in r/AutisticWithADHD' },
+          { pattern: '\\b(tried|didn\'t work|failed|gave up|that was useless|waste of time)\\b', flags: 'i', points: 1, message: '"What didn\'t work" section — this sub loves the full journey, failures included' },
+          { pattern: '\\b(lol|lmao|haha|tbh|ngl|omg)\\b|:\\)|;\\)|:D|:P', flags: 'i', points: 1, message: 'Humour — r/AutisticWithADHD appreciates warmth and levity' },
+          { pattern: '\\b(embarrassing|cringe|terrible at|awful at|can\'t even|my brain just|the irony|plot twist)\\b', flags: 'i', points: 1, message: 'Self-deprecation — strong authenticity signal' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific lived details — the more specific, the more relatable here' }
+        ],
+        penalties: [],
+        emojiBonus: 0
+      },
+      'aspergers': {
+        style: 'r/aspergers is a debate club, not a support group. Lead with observation and analysis, not emotion.',
+        rewards: [
+          { pattern: '\\b(I (noticed|observed|realised)|the pattern|mechanism|system(s|atic)?|bottleneck|processing)\\b', flags: 'i', points: 2, message: 'Analytical framing — exactly what r/aspergers values. "I noticed" beats "I felt" every time' },
+          { pattern: '\\b(my theory|hypothesis|I wonder if|could be (that|because)|one possible)\\b', flags: 'i', points: 1, message: 'Hypothesis language — r/aspergers loves testable observations' },
+          { pattern: '\\b(does (this|that) match|do (you|others) (experience|find)|am I (right|wrong)|what\'s your (take|view|experience))\\b', flags: 'i', points: 1, message: 'Debate invitation — highest engagement format in r/aspergers (0.83 comment-to-score ratio)' },
+          { pattern: '\\b(how it works|the (mechanism|process|logic|reason)|steps?|approach)\\b', flags: 'i', points: 1, message: 'Mechanism description — r/aspergers wants to understand HOW, not just WHAT' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific factual details — grounds the analysis in reality' }
+        ],
+        penalties: [
+          { pattern: '\\b(I feel|I felt|breaks my heart|it hurts|emotionally|vulnerable|scared|afraid)\\b', flags: 'i', points: 1, message: 'Emotional framing as lead — r/aspergers prefers "I noticed" over "I felt". Save feelings for detail, not the hook' },
+          { pattern: '(!.*!.*!|!!)', flags: '', points: 1, message: 'High-energy punctuation — r/aspergers has a more measured, analytical tone' }
+        ],
+        emojiBonus: -1,
+        emojiMessage: 'Emoji detected — r/aspergers has a measured, analytical tone. Emoji feels out of place here'
+      },
+      'adhdwomen': {
+        style: 'r/adhdwomen wants raw emotional vulnerability, physical descriptions, shame spirals, and "omg same" energy.',
+        rewards: [
+          { pattern: '\\b(chest tight|stomach drop|heart rac|palms|throat|physically|thump|punch in the gut|felt sick|couldn\'t breathe|froze|freezing|hands shak|nauseous)\\b', flags: 'i', points: 2, message: 'Physical sensation — THE highest-performing signal in r/adhdwomen posts' },
+          { pattern: '\\b(shame|ashamed|hate myself|disgusted with|spiral|guilt|worthless|failure|what\'s wrong with me)\\b', flags: 'i', points: 2, message: 'Shame spiral language — r/adhdwomen\'s #1 topic. The community rallies around this' },
+          { pattern: '\\b(does anyone else|DAE|anyone else|is it just me|am I the only)\\b', flags: 'i', points: 1, message: '"Does anyone else" — peak engagement format for r/adhdwomen' },
+          { pattern: '\\b(lol|lmao|haha|tbh|ngl|omg)\\b|:\\)|;\\)|:D|:P', flags: 'i', points: 1, message: 'Humour markers — r/adhdwomen comment tone is "omg same" with emojis and laughs' },
+          { pattern: '\\b(embarrassing|cringe|terrible at|awful at|can\'t even|my brain just|I\'m the worst|I\'m so bad at|plot twist)\\b', flags: 'i', points: 1, message: 'Self-deprecation — celebratory here. r/adhdwomen loves the "tiny wins after rock bottom" arc' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific lived details — grounds the vulnerability in real life' }
+        ],
+        penalties: [
+          { pattern: '\\b(the data shows|analysis|mechanism|systematically|protocol|methodology)\\b', flags: 'i', points: 1, message: 'Analytical/dry language — r/adhdwomen wants raw feelings, not research papers' },
+          { pattern: '\\b(you should|just (try|do)|have you (tried|considered)|the key is|the trick is)\\b', flags: 'i', points: 1, message: 'Prescriptive tone — r/adhdwomen shares experiences, not advice' }
+        ],
+        emojiBonus: 1,
+        emojiMessage: 'Emoji usage — fits the warm, expressive tone of r/adhdwomen'
+      },
+      'neurodivergent': {
+        style: 'r/neurodivergent wants community-first sharing. Lead with the cost/pain, keep it concise.',
+        rewards: [
+          { pattern: '\\b(us|we|our community|people like me|people like us|for (us|ourselves))\\b', flags: 'i', points: 1, message: 'Community language — r/neurodivergent responds to "built for us" framing' },
+          { pattern: '\\b(cost me|lost|damaged|ruined|broke|missed|gone|too late)\\b', flags: 'i', points: 2, message: 'Cost/consequence language — naming what reply paralysis TAKES from you hits hard here' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific lived details — makes the cost real and personal' },
+          { pattern: '\\b(does anyone else|DAE|anyone else|who else|how do you)\\b', flags: 'i', points: 1, message: 'Community question — drives engagement in a small sub' }
+        ],
+        penalties: [
+          { pattern: '\\b(announcing|launch|excited to share|proud to|introducing|we\'re building)\\b', flags: 'i', points: 2, message: 'Announcement/Product Hunt tone — r/neurodivergent is a small community, not a launch pad' },
+          { pattern: '\\b(features?|integration|dashboard|platform|SaaS|subscription)\\b', flags: 'i', points: 1, message: 'Feature listing — describe the FEELING it solves, not what it does' }
+        ],
+        emojiBonus: 0
+      },
+      'socialanxiety': {
+        style: 'r/socialanxiety wants quiet, universal, understated posts. No jargon, no energy, just "yeah... me too."',
+        rewards: [
+          { pattern: '\\b(anyone|everyone|people|you know (that|the) feeling|most people)\\b', flags: 'i', points: 1, message: 'Universal language — r/socialanxiety isn\'t ND-specific. Keep it for everyone' },
+          { pattern: '\\b(message|reply|text|email|phone|call|respond|conversation|DM)\\b', flags: 'i', points: 1, message: 'Everyday communication references — relatable to anyone with social anxiety' },
+          { pattern: '\\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|\\d+ (hours|days|weeks|minutes|years))\\b', flags: 'i', points: 1, message: 'Specific detail — grounds the post in a real moment' },
+          { pattern: '\\b(does anyone (else)?|is it just me|am I the only|who else)\\b', flags: 'i', points: 1, message: 'Shared experience question — the community finds comfort in "me too"' }
+        ],
+        penalties: [
+          { pattern: '(!.*!.*!|!!+)', flags: '', points: 1, message: 'Excessive exclamation — r/socialanxiety has a quiet, understated tone' },
+          { pattern: '\\b(executive function|cognitive|neurotransmit|dopamine|serotonin|amygdala)\\b', flags: 'i', points: 1, message: 'Clinical/scientific language — keep it simple and relatable for r/socialanxiety' },
+          { pattern: '\\b(amazing|incredible|game.?changer|life.?changing|breakthrough|finally found)\\b', flags: 'i', points: 1, message: 'Hyperbolic enthusiasm — too loud for r/socialanxiety\'s quiet culture' }
+        ],
+        emojiBonus: -1,
+        emojiMessage: 'Emoji detected — r/socialanxiety has a quieter, more understated tone. Less is more'
+      }
+    };
+
     // ════════════════════════════════════════════════════════════
     // State Management
     // ════════════════════════════════════════════════════════════
@@ -1463,54 +1587,55 @@
           voiceChecks.push({ pass: false, message: 'Average sentence length is ' + Math.round(avgSentenceLen) + ' words \u2014 feels overly composed. Mix in some short fragments' });
         }
 
-        // --- HUMAN MARKERS (reward) ---
+        // --- SUB-SPECIFIC VOICE SIGNALS ---
+        var profile = VOICE_PROFILES[currentSub.id];
+        var rewardCount = 0;
 
-        // Humour / personality indicators
-        var humourMarkers = /\b(lol|lmao|haha|tbh|ngl)\b|\u{1F62C}|\u{1F605}|\u{1F62D}|\u{1F926}|:\)|;\)|:D|:P/gu;
-        if (humourMarkers.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Humour/personality markers found \u2014 feels human' });
+        if (profile) {
+          // Run sub-specific reward pattern checks
+          for (var rw = 0; rw < profile.rewards.length; rw++) {
+            var reward = profile.rewards[rw];
+            try {
+              var rwRe = new RegExp(reward.pattern, reward.flags);
+              if (rwRe.test(body)) {
+                voiceScore += reward.points;
+                rewardCount++;
+                voiceChecks.push({ pass: true, message: reward.message });
+              }
+            } catch(e) { /* skip broken patterns gracefully */ }
+          }
+
+          // Run sub-specific penalty pattern checks
+          for (var pn = 0; pn < profile.penalties.length; pn++) {
+            var penalty = profile.penalties[pn];
+            try {
+              var pnRe = new RegExp(penalty.pattern, penalty.flags);
+              if (pnRe.test(body)) {
+                voiceScore -= penalty.points;
+                voiceChecks.push({ pass: false, message: penalty.message });
+              }
+            } catch(e) { /* skip broken patterns gracefully */ }
+          }
+
+          // Emoji check (some subs reward it, some penalise it)
+          if (profile.emojiBonus !== 0) {
+            var hasEmoji = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(body);
+            if (hasEmoji) {
+              voiceScore += profile.emojiBonus;
+              if (profile.emojiBonus > 0) {
+                voiceChecks.push({ pass: true, message: profile.emojiMessage });
+              } else {
+                voiceChecks.push({ pass: false, message: profile.emojiMessage });
+              }
+            }
+          }
         }
 
-        // Self-deprecation (strong human signal)
-        var selfDeprecation = /\b(embarrassing|cringe|terrible at|awful at|can'?t even|my brain just|I'?m the worst|I'?m so bad at|the irony|plot twist)\b/i;
-        if (selfDeprecation.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Self-deprecation detected \u2014 strong authenticity signal' });
-        }
-
-        // Specific lived details (places, times, people, numbers)
-        var specificDetails = /\b(last (week|month|tuesday|wednesday|thursday|friday|monday)|the other day|at work|on shift|my (colleague|mate|friend|partner|boss|mum|dad)|[0-9]+ (hours|days|weeks|minutes|years))\b/i;
-        if (specificDetails.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Specific lived details found \u2014 anchors the story as real' });
-        }
-
-        // Physical sensation descriptions (high-performing in ND subs)
-        var physicalSensations = /\b(chest tight|stomach drop|heart rac|palms|throat|physically|thump|punch in the gut|felt sick|couldn'?t breathe|froze|freezing)\b/i;
-        if (physicalSensations.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Physical sensation described \u2014 the top-performing posts in ND subs all do this' });
-        }
-
-        // Informal language / British English (authentic voice)
-        var informalVoice = /\b(cos|gonna|kinda|wanna|innit|rubbish|bloody|arse|mate|sorted|reckon|proper|knackered|dodgy)\b|\.\.\./i;
-        if (informalVoice.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Informal/colloquial language \u2014 sounds like a real person, not a template' });
-        }
-
-        // Conversational markers
-        var conversational = /\b(anyway|like,|honestly|I mean|you know what|if that makes sense|sorry for the ramble|idk)\b/i;
-        if (conversational.test(body)) {
-          voiceScore += 1;
-          voiceChecks.push({ pass: true, message: 'Conversational tone markers \u2014 reads like someone actually talking' });
-        }
-
-        // No human markers at all
-        if (voiceChecks.length === 0) {
+        // No positive voice signals found for this sub
+        if (rewardCount === 0) {
           voiceScore -= 1;
-          voiceChecks.push({ pass: false, message: 'No personality markers detected \u2014 add humour, specific details, or informal language to sound like yourself' });
+          var voiceTip = profile ? profile.style : 'Add personality, specific details, or informal language to sound like yourself';
+          voiceChecks.push({ pass: false, message: 'No voice signals for ' + currentSub.name + ' \u2014 ' + voiceTip });
         }
       } else {
         voiceScore = 0;
@@ -1614,7 +1739,8 @@
           throw new Error('Server returned ' + response.status + ': ' + response.statusText);
         }
 
-        var data = await response.json();
+        var raw = await response.json();
+        var data = Array.isArray(raw) ? raw[0] : raw;
 
         if (data.title) {
           titleEl.value = data.title;
@@ -1687,7 +1813,8 @@
           throw new Error('Server returned ' + response.status + ': ' + response.statusText);
         }
 
-        var data = await response.json();
+        var raw = await response.json();
+        var data = Array.isArray(raw) ? raw[0] : raw;
 
         // Update localStorage status to ready
         var state = getState();
