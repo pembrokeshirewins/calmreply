@@ -535,6 +535,17 @@
       background: #f0f4f7;
     }
 
+    .mode-btn:focus-visible,
+    .link-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .tone-pill input:focus-visible + span {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     /* ── Context Field ── */
     .context-toggle {
       margin-top: 10px;
@@ -547,7 +558,10 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px 0;
+      padding: 12px 4px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
       transition: color 0.2s;
     }
 
@@ -868,6 +882,12 @@
           contextLabel.textContent = 'Anything you want me to consider when interpreting this? (optional)';
         }
         updatePlaceholder();
+        // Clear prior output on mode switch
+        outputSection.classList.remove('visible');
+        interpretPlaceholder.style.display = 'none';
+        errorMsg.classList.remove('visible');
+        coachingNote.classList.remove('visible');
+        feedbackSection.classList.remove('visible');
       }
 
       function showContext() {
@@ -914,14 +934,15 @@
           return;
         }
 
-        bump('generate_clicked');
-
         if (currentMode === 'interpret') {
+          bump('interpret_clicked');
           outputSection.classList.remove('visible');
           interpretPlaceholder.style.display = 'block';
           interpretPlaceholder.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           return;
         }
+
+        bump('generate_clicked');
 
         var contextText = contextInput ? contextInput.value.trim() : '';
         if (contextText) {
