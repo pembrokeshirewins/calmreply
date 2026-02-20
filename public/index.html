@@ -485,6 +485,23 @@
       display: block;
     }
 
+    .coaching-note {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: #f0f7f8;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+      font-size: 0.88rem;
+      font-style: italic;
+      color: var(--text-light);
+      line-height: 1.55;
+    }
+
+    .coaching-note.visible {
+      display: block;
+    }
+
     .response-disclaimer {
       font-size: 0.78rem;
       color: var(--text-light);
@@ -509,6 +526,7 @@
     <div class="field">
       <label for="situation">What kind of message is this?</label>
       <select id="situation">
+        <option value="avoiding">I've Been Avoiding This</option>
         <option value="complaint">Complaint / De-escalation</option>
         <option value="ghosted">Ghosted Follow-Up</option>
         <option value="invoice">Invoice Chase</option>
@@ -521,7 +539,7 @@
     <!-- User Message -->
     <div class="field">
       <label for="message">Paste what you received, or describe the situation</label>
-      <textarea id="message" rows="6" placeholder="Paste the message here, or describe what you need to say..."></textarea>
+      <textarea id="message" rows="6" placeholder="Paste the message you've been avoiding, or describe who you need to reach out to"></textarea>
     </div>
 
     <!-- Tone Selector -->
@@ -549,6 +567,7 @@
     <div class="output-section" id="outputSection">
       <div class="output-label">Your suggested response</div>
       <div class="output-text" id="outputText"></div>
+      <div class="coaching-note" id="coachingNote"></div>
       <button class="btn-copy" id="copyBtn" type="button">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.5a1.5 1.5 0 0 0-1.5-1.5H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2"/></svg>
         <span id="copyLabel">Copy to clipboard</span>
@@ -615,6 +634,9 @@
       var feedbackSend = document.getElementById('feedbackSend');
       var feedbackThanks = document.getElementById('feedbackThanks');
       var feedbackBtns = document.querySelectorAll('.feedback-btn');
+      var coachingNote = document.getElementById('coachingNote');
+      var defaultPlaceholder = 'Paste the message here, or describe what you need to say...';
+      var avoidingPlaceholder = 'Paste the message you\'ve been avoiding, or describe who you need to reach out to';
 
       // ── Tracking state ──
       var currentRequestId = null;
@@ -643,6 +665,12 @@
         } catch (e) {}
       }
 
+      // ── Dynamic placeholder for "Avoiding" ──
+      messageEl.placeholder = situationEl.value === 'avoiding' ? avoidingPlaceholder : defaultPlaceholder;
+      situationEl.addEventListener('change', function () {
+        messageEl.placeholder = situationEl.value === 'avoiding' ? avoidingPlaceholder : defaultPlaceholder;
+      });
+
       // ── Submit Handler ──
       submitBtn.addEventListener('click', function () {
         var message = messageEl.value.trim();
@@ -654,6 +682,7 @@
         // Reset state
         errorMsg.classList.remove('visible');
         outputSection.classList.remove('visible');
+        coachingNote.classList.remove('visible');
         feedbackSection.classList.remove('visible');
         feedbackComment.classList.remove('visible');
         feedbackThanks.classList.remove('visible');
@@ -688,7 +717,21 @@
           .then(function (data) {
             var result = Array.isArray(data) ? data[0] : data;
             if (!result || !result.response) throw new Error('Empty response');
-            outputText.textContent = result.response;
+
+            var fullResponse = result.response;
+            coachingNote.classList.remove('visible');
+            coachingNote.textContent = '';
+
+            // Split coaching note for "avoiding" type
+            if (situationType === 'avoiding' && fullResponse.indexOf('\n---\n') !== -1) {
+              var parts = fullResponse.split('\n---\n');
+              outputText.textContent = parts[0].trim();
+              coachingNote.textContent = parts.slice(1).join('\n---\n').trim();
+              coachingNote.classList.add('visible');
+            } else {
+              outputText.textContent = fullResponse;
+            }
+
             outputSection.classList.add('visible');
             feedbackSection.classList.add('visible');
             outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
