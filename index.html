@@ -652,8 +652,8 @@
 
     <!-- Message Input -->
     <div class="field">
-      <label for="message" id="messageLabel">Paste what you received, or describe the situation</label>
-      <textarea id="message" rows="6" placeholder="Paste the message you've been avoiding, or describe who you need to reach out to"></textarea>
+      <label for="message" id="messageLabel">Paste the message you're stuck on, or describe what you need to say</label>
+      <textarea id="message" rows="6" placeholder="Paste the message you're stuck on, or describe what you need to say"></textarea>
     </div>
 
     <!-- Collapsible Context Field -->
@@ -661,8 +661,8 @@
       <button type="button" id="contextBtn" class="link-btn">+ Add a note (optional)</button>
     </div>
     <div class="context-field" id="contextField" style="display:none;">
-      <label for="contextInput" id="contextLabel">Add a note (optional)</label>
-      <textarea id="contextInput" rows="3" placeholder="What you want to say, your goal, any constraints..."></textarea>
+      <label for="contextInput" id="contextLabel">Anything else I should know? (optional)</label>
+      <textarea id="contextInput" rows="3" placeholder="Who sent this, your relationship, what you want to happen..."></textarea>
     </div>
 
     <!-- Mode Toggle -->
@@ -680,18 +680,6 @@
     </div>
     <div class="options-panel" id="optionsPanel" style="display:none;">
       <div class="field">
-        <label for="situation">Situation</label>
-        <select id="situation">
-          <option value="avoiding">I've Been Avoiding This</option>
-          <option value="complaint">Complaint / De-escalation</option>
-          <option value="ghosted">Ghosted Follow-Up</option>
-          <option value="invoice">Invoice Chase</option>
-          <option value="scope">Scope Pushback / Saying No</option>
-          <option value="awkward">Awkward or Difficult Message</option>
-          <option value="general">General Communication Help</option>
-        </select>
-      </div>
-      <div class="field">
         <label>Tone</label>
         <div class="tone-options">
           <label class="tone-pill">
@@ -701,6 +689,10 @@
           <label class="tone-pill">
             <input type="radio" name="tone" value="firmer" />
             <span>Firmer</span>
+          </label>
+          <label class="tone-pill">
+            <input type="radio" name="tone" value="protective" />
+            <span>Protective</span>
           </label>
         </div>
       </div>
@@ -777,7 +769,6 @@
       var EMAIL_WEBHOOK_URL = 'https://aswales.app.n8n.cloud/webhook/calmreply-email';
 
       // ── Elements ──
-      var situationEl = document.getElementById('situation');
       var messageEl = document.getElementById('message');
       var messageLabel = document.getElementById('messageLabel');
       var submitBtn = document.getElementById('submitBtn');
@@ -813,13 +804,8 @@
       var currentRequestId = null;
 
       var placeholders = {
-        reply: {
-          avoiding: 'Paste the message you\'ve been avoiding, or describe who you need to reach out to',
-          default: 'Paste the message here, or describe what you need to say...'
-        },
-        interpret: {
-          default: 'Paste the message you want help understanding'
-        }
+        reply: 'Paste the message you\'re stuck on, or describe what you need to say',
+        interpret: 'Paste the message you want help understanding'
       };
 
       function getSelectedTone() {
@@ -858,13 +844,9 @@
       }
 
       function updatePlaceholder() {
-        if (currentMode === 'interpret') {
-          messageEl.placeholder = placeholders.interpret.default;
-        } else {
-          messageEl.placeholder = situationEl.value === 'avoiding'
-            ? placeholders.reply.avoiding
-            : placeholders.reply.default;
-        }
+        messageEl.placeholder = currentMode === 'interpret'
+          ? placeholders.interpret
+          : placeholders.reply;
       }
 
       function updateModeUI() {
@@ -872,8 +854,8 @@
           modeReply.classList.add('active');
           modeInterpret.classList.remove('active');
           submitBtn.textContent = 'Help me respond';
-          messageLabel.textContent = 'Paste what you received, or describe the situation';
-          contextLabel.textContent = 'Add a note (optional)';
+          messageLabel.textContent = 'Paste the message you\'re stuck on, or describe what you need to say';
+          contextLabel.textContent = 'Anything else I should know? (optional)';
         } else {
           modeInterpret.classList.add('active');
           modeReply.classList.remove('active');
@@ -924,7 +906,6 @@
         updateModeUI();
       });
       optionsBtn.addEventListener('click', toggleOptions);
-      situationEl.addEventListener('change', updatePlaceholder);
 
       // Submit Handler
       submitBtn.addEventListener('click', function () {
@@ -961,7 +942,6 @@
         submitBtn.textContent = 'Finding the right words\u2026';
 
         currentRequestId = generateId();
-        var situationType = situationEl.value;
         var tone = getSelectedTone();
 
         var userMessage = message;
@@ -971,9 +951,9 @@
         if (shortReply.checked) {
           userMessage += '\n\n[SHORT REPLY MODE: Write a reply of 40 words or fewer. One paragraph. Must contain an acknowledgment and a clear action or ask. Hard cap 60 words. No filler, no sign-offs unless the input had one.]';
         }
+        userMessage += '\n\n[TONE: ' + tone + ']';
 
         var payload = {
-          situationType: situationType,
           userMessage: userMessage,
           tone: tone
         };
@@ -1000,7 +980,7 @@
             coachingNote.classList.remove('visible');
             coachingNote.textContent = '';
 
-            if (situationType === 'avoiding' && fullResponse.indexOf('\n---\n') !== -1) {
+            if (fullResponse.indexOf('\n---\n') !== -1) {
               var parts = fullResponse.split('\n---\n');
               outputText.textContent = parts[0].trim();
               coachingNote.textContent = parts.slice(1).join('\n---\n').trim();
@@ -1017,7 +997,6 @@
               event: 'generation',
               requestId: currentRequestId,
               timestamp: new Date().toISOString(),
-              situationType: situationType,
               tone: tone,
               mode: currentMode,
               shortReply: shortReply.checked,
@@ -1033,7 +1012,6 @@
               event: 'error',
               requestId: currentRequestId,
               timestamp: new Date().toISOString(),
-              situationType: situationType,
               tone: tone,
               device: getDeviceType()
             });
